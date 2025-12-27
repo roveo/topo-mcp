@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "go-indexer": {
+      "type": "local",
+      "command": ["/Users/roveo/go/bin/go-indexer-mcp", "mcp"]
+    }
+  }
+}
