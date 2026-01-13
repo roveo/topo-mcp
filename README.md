@@ -99,7 +99,7 @@ topo mcp
 ### Available Tools
 
 #### `index`
-List all symbols in a codebase with their line ranges.
+List all symbols in a codebase with their line ranges. Output is limited to 1000 lines by default to keep responses manageable; large directories are automatically pruned with a notice showing which directories were omitted.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -146,7 +146,7 @@ topo map --filter src/handlers
 # Skip certain paths by default
 topo map --skip generated --skip vendor
 
-# Limit output lines
+# Limit output lines (default: 1000, 0 = no limit)
 topo map --limit 500
 ```
 

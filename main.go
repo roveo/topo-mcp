@@ -52,7 +52,7 @@ func init() {
 
 	// Add --limit flag to root (inherited by all subcommands)
 	rootCmd.PersistentFlags().IntVar(&lineLimit, "limit", tools.DefaultLineLimit,
-		"Maximum lines in output (0 = no limit)")
+		"Maximum lines in index output (default 1000, 0 = no limit)")
 
 	// Add --filter flag to map command
 	mapCmd.Flags().StringP("filter", "f", "",
