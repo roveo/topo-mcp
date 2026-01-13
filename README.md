@@ -1,115 +1,167 @@
-# go-indexer-mcp
+# Topo MCP
 
-An MCP (Model Context Protocol) server that indexes Go codebases. It parses Go source files using the `go/ast` package and extracts symbols (functions, types, constants, variables) with their line ranges to provide codebase maps for AI assistants.
+An MCP (Model Context Protocol) server providing **code topology tools** for LLMs - helping them understand and navigate codebases.
 
-## Features
+## What is Topo?
 
-- Extracts all Go symbols: functions, methods, types, constants, and variables
-- Provides line ranges for each symbol for easy navigation
-- Includes function signatures and type kinds (struct, interface, etc.)
-- Extracts doc comments (first line) for types and functions
-- Supports filtering by file or directory path
-- Configurable skip patterns to exclude directories by default
-- Works as an MCP server or standalone CLI tool
+LLMs need to know *where things are* in a codebase before they can jump to them. Topo provides the map.
+
+Traditional developer tools like LSP were designed for IDEs with cursors and real-time feedback. LLMs operate differently - they work with context windows, batch processing, and need high-level structural understanding.
+
+Topo provides tools that give LLMs what they need:
+- **`index`** - Map the terrain (list all symbols with locations)
+- **`read_definition`** - Jump to a symbol and read its code
+- **`write_definition`** - Replace a symbol's code
+- **`find_references`** - Find everywhere a symbol is used
+
+## Example Output
+
+```
+## src/server.go
+  type Server struct [15-42] // Server handles HTTP requests
+  NewServer(*Config) *Server [44-60]
+  (*Server) Start(context.Context) error [62-85]
+  (*Server) handleRequest(http.ResponseWriter, *http.Request) [87-120]
+
+## src/config.go
+  type Config struct [8-15] // Config holds server settings
+  LoadConfig(string) (*Config, error) [17-35]
+```
+
+## Supported Languages
+
+| Language | Extensions | Build Tag |
+|----------|------------|-----------|
+| Go | `.go` | `lang_go` |
+| Python | `.py` | `lang_python` |
+| TypeScript | `.ts`, `.tsx` | `lang_typescript` |
+| JavaScript | `.js`, `.jsx`, `.mjs`, `.cjs` | `lang_typescript` |
+| Rust | `.rs` | `lang_rust` |
 
 ## Installation
 
+### Pre-built Profiles
+
+Choose a build profile that matches your stack:
+
+| Profile | Languages | Binary |
+|---------|-----------|--------|
+| Go only | Go | `topo-go` |
+| Python only | Python | `topo-python` |
+| TypeScript/JS | TS/JS | `topo-typescript` |
+| Rust only | Rust | `topo-rust` |
+| Backend | Go, Python, Rust | `topo-backend` |
+| Frontend | TypeScript/JavaScript | `topo-frontend` |
+| Fullstack | Go, TypeScript/JS | `topo-fullstack` |
+| Web | Python, TypeScript/JS | `topo-web` |
+| ML | Python, Rust | `topo-ml` |
+| All | All languages | `topo-all` |
+
+### Build from Source
+
 ```bash
-go install github.com/roveo/go-indexer-mcp@latest
+git clone https://github.com/roveo/topo-mcp.git
+cd topo-mcp
+
+# Build default (Go only - smallest binary)
+make build
+
+# Build with all languages
+make build-all
+
+# Build a specific profile
+make build-fullstack
+
+# Build all profiles
+make build-profiles
 ```
 
-Or build from source:
+### Install with Go
 
 ```bash
-git clone https://github.com/roveo/go-indexer-mcp.git
-cd go-indexer-mcp
-go build
+# Go only (default)
+go install github.com/roveo/topo-mcp@latest
+
+# All languages
+go install -tags lang_all github.com/roveo/topo-mcp@latest
+
+# Custom combination
+go install -tags "lang_go,lang_python" github.com/roveo/topo-mcp@latest
 ```
 
 ## Usage
 
 ### MCP Server Mode
 
-Run as an MCP server (default mode, communicates via stdio):
+Run as an MCP server (communicates via stdio):
 
 ```bash
-go-indexer-mcp mcp
+topo mcp
 ```
 
-The server exposes an `index` tool with the following parameters:
+### Available Tools
+
+#### `index`
+List all symbols in a codebase with their line ranges.
 
 | Parameter | Description |
 |-----------|-------------|
-| `path` | Directory path to index. Defaults to current working directory. |
-| `filter` | Optional path filter to show only a specific package or file. Overrides skip patterns. |
+| `path` | Directory to index (default: cwd) |
+| `filter` | Path filter to show only matching files/directories |
+
+#### `read_definition`
+Get the source code of a symbol by name and file path.
+
+| Parameter | Description |
+|-----------|-------------|
+| `file` | Relative file path |
+| `symbol` | Name of the symbol to read |
+
+#### `write_definition`
+Replace a symbol's source code.
+
+| Parameter | Description |
+|-----------|-------------|
+| `file` | Relative file path |
+| `symbol` | Name of the symbol to replace |
+| `code` | New source code for the symbol |
+
+#### `find_references`
+Find all references to a symbol across the codebase.
+
+| Parameter | Description |
+|-----------|-------------|
+| `path` | Directory to search (default: cwd) |
+| `symbol` | Name of the symbol to find |
 
 ### CLI Mode
 
-Index a directory and print the map to stdout:
-
 ```bash
-go-indexer-mcp map [path]
+# Index current directory
+topo map
+
+# Index a specific directory
+topo map /path/to/project
+
+# Filter to specific package/directory
+topo map --filter src/handlers
+
+# Skip certain paths by default
+topo map --skip generated --skip vendor
+
+# Limit output lines
+topo map --limit 500
 ```
 
-Options:
-- `-f, --filter`: Only show symbols for files matching this path prefix
-- `--skip`: Path prefixes to skip by default (can be specified multiple times)
+### MCP Client Configuration
 
-### Examples
-
-Index the current directory:
-```bash
-go-indexer-mcp map
-```
-
-Index a specific directory:
-```bash
-go-indexer-mcp map /path/to/project
-```
-
-Index only a specific package:
-```bash
-go-indexer-mcp map --filter cmd/server
-```
-
-Skip parts of the code by default:
-```bash
-go-indexer-mcp map --skip generated --skip internal/mocks
-```
-
-## Output Format
-
-The output is a compact, human-readable format:
-
-```
-## main.go
-  main() [10-15]
-  type Config struct [17-22] // Config holds application settings
-  (*Config) Validate() error [24-30]
-  const DefaultTimeout [32]
-  var ErrNotFound [34]
-
-## pkg/handler/handler.go
-  type Handler interface [5-12] // Handler processes requests
-  NewHandler(*Config) Handler [14-20]
-```
-
-Each symbol shows:
-- **Functions**: `name(params) returns [start-end]`
-- **Methods**: `(receiver) name(params) returns [start-end]`
-- **Types**: `type Name kind [start-end]`
-- **Consts/Vars**: `const/var Name [line]`
-- Doc comments are appended with `// ...` when present
-
-## MCP Configuration
-
-Add to your MCP client configuration:
+Add to your MCP client (e.g., Claude Desktop):
 
 ```json
 {
   "mcpServers": {
-    "go-indexer": {
-      "command": "go-indexer-mcp",
+    "topo": {
+      "command": "topo",
       "args": ["mcp"]
     }
   }
@@ -121,26 +173,88 @@ With skip patterns:
 ```json
 {
   "mcpServers": {
-    "go-indexer": {
-      "command": "go-indexer-mcp",
+    "topo": {
+      "command": "topo",
       "args": ["mcp", "--skip", "generated", "--skip", "testdata"]
     }
   }
 }
 ```
 
-## Directories Skipped Automatically
+## Output Format Examples
+
+### Go
+```
+## main.go
+  main() [10-15]
+  type Config struct [17-22] // Config holds settings
+  (*Config) Validate() error [24-30]
+  const DefaultTimeout [32]
+  var ErrNotFound [34]
+```
+
+### Python
+```
+## app.py
+  VERSION [5]
+  @dataclass class Config [8-15] // Application configuration
+  class Server(BaseServer) [17-45] // HTTP server implementation
+  def main(args: List[str]) -> int [47-60] // Entry point
+```
+
+### TypeScript
+```
+## server.ts
+  interface Config [5-12] // Server configuration
+  type Handler [14-16]
+  class Server extends EventEmitter [18-50] // Main server class
+  async function startServer(config: Config): Promise<void> [52-70]
+```
+
+### Rust
+```
+## lib.rs
+  pub mod server [3]
+  pub struct Config [5-12] // Server configuration
+  pub enum Error [14-20]
+  pub trait Handler [22-28]
+  impl Config: pub fn new() -> Self [30-35]
+```
+
+## Automatic Exclusions
 
 The indexer automatically skips:
-- Hidden directories (starting with `.`)
+- Hidden directories (`.git`, `.vscode`, etc.)
 - `vendor/` directory
 - `node_modules/` directory
 
+## Architecture
+
+```
+topo-mcp/
+├── languages/
+│   ├── language.go      # Symbol interface, Range, Position
+│   ├── registry.go      # Language registry
+│   ├── golang/          # Go parser (tree-sitter)
+│   ├── python/          # Python parser (tree-sitter)
+│   ├── typescript/      # TS/JS parser (tree-sitter)
+│   └── rust/            # Rust parser (tree-sitter)
+├── tools/
+│   ├── codemap.go       # index tool
+│   ├── read_definition.go
+│   ├── write_definition.go
+│   └── find_references.go
+├── mcp.go               # MCP server implementation
+└── main.go              # CLI entry point
+```
+
+Each language is in its own package with build tags, allowing compile-time selection of which languages to include.
+
 ## Dependencies
 
-- [github.com/modelcontextprotocol/go-sdk](https://github.com/modelcontextprotocol/go-sdk) - MCP protocol SDK for Go
-- [github.com/spf13/cobra](https://github.com/spf13/cobra) - CLI framework
-- Standard library: `go/ast`, `go/parser`, `go/token` for AST parsing
+- [tree-sitter](https://tree-sitter.github.io/) via [go-tree-sitter](https://github.com/smacker/go-tree-sitter) - Fast, incremental parsing
+- [MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk) - Model Context Protocol
+- [Cobra](https://github.com/spf13/cobra) - CLI framework
 
 ## License
 
