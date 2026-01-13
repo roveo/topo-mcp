@@ -152,7 +152,37 @@ topo map --limit 500
 
 ### MCP Client Configuration
 
-Add to your MCP client (e.g., Claude Desktop):
+#### OpenCode
+
+Add to your `opencode.json`:
+
+```json
+{
+  "mcp": {
+    "topo": {
+      "type": "local",
+      "command": ["topo", "mcp"]
+    }
+  }
+}
+```
+
+With skip patterns:
+
+```json
+{
+  "mcp": {
+    "topo": {
+      "type": "local",
+      "command": ["topo", "mcp", "--skip", "generated", "--skip", "testdata"]
+    }
+  }
+}
+```
+
+#### Claude Code
+
+Add to your Claude Code MCP settings (`~/.claude/claude_desktop_config.json` or via `claude mcp add`):
 
 ```json
 {
@@ -165,14 +195,28 @@ Add to your MCP client (e.g., Claude Desktop):
 }
 ```
 
+Or use the CLI:
+
+```bash
+claude mcp add topo -- topo mcp
+```
+
 With skip patterns:
+
+```bash
+claude mcp add topo -- topo mcp --skip generated --skip testdata
+```
+
+#### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 
 ```json
 {
   "mcpServers": {
     "topo": {
       "command": "topo",
-      "args": ["mcp", "--skip", "generated", "--skip", "testdata"]
+      "args": ["mcp"]
     }
   }
 }
