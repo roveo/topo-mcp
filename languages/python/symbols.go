@@ -1,5 +1,3 @@
-//go:build lang_python || lang_all
-
 package python
 
 import (

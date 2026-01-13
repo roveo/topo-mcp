@@ -1,4 +1,4 @@
-//go:build lang_rust && !lang_all
+//go:build lang_rust
 
 package main
 

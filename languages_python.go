@@ -1,4 +1,4 @@
-//go:build lang_python && !lang_all
+//go:build lang_python
 
 package main
 

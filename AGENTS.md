@@ -36,20 +36,19 @@ topo-mcp/
 ## Build Commands
 
 ```bash
-# Build the binary (Go only, smallest)
+# Build the binary (all languages, default)
 make build
 
-# Build with all languages
-make build-all
-
-# Build specific profile
-make build-fullstack
+# Build with specific language(s) only
+make build-go
+go build -tags lang_go .
+go build -tags "lang_go,lang_python" .
 
 # Run directly without building
-go run -tags lang_go .
+go run .
 
 # Install to $GOPATH/bin
-go install -tags lang_go .
+go install .
 
 # Format code
 make format
@@ -80,24 +79,20 @@ topo map --filter src/handlers --skip vendor --limit 500
 # Run all tests
 make test
 
-# Run all tests with all languages
-make test-all
-
 # Run a single test by name
-go test -tags lang_go -mod=readonly -run TestFunctionName ./... -count=1
+go test -mod=readonly -run TestFunctionName ./... -count=1
 
 # Run tests with verbose output
-go test -tags lang_go -mod=readonly -v ./... -count=1
+go test -mod=readonly -v ./... -count=1
 
 # Run tests with coverage
-go test -tags lang_go -mod=readonly -cover ./... -count=1
+go test -mod=readonly -cover ./... -count=1
 
 # Run tests with race detector
-go test -tags lang_go -mod=readonly -race ./... -count=1
+go test -mod=readonly -race ./... -count=1
 ```
 
 **Note:** Test files should be named `*_test.go` and placed alongside the code they test.
-Tests that need language parsers must import them (e.g., `_ "github.com/roveo/topo-mcp/languages/golang"`).
 
 ## Dependencies
 

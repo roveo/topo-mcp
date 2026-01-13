@@ -1,4 +1,4 @@
-//go:build lang_typescript && !lang_all
+//go:build lang_typescript
 
 package main
 

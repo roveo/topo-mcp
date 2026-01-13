@@ -1,5 +1,3 @@
-//go:build lang_rust || lang_all
-
 package rust
 
 import (

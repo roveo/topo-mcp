@@ -1,5 +1,3 @@
-//go:build lang_typescript || lang_all
-
 package typescript
 
 import (

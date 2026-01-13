@@ -1,5 +1,3 @@
-//go:build lang_go || lang_all || (!lang_python && !lang_typescript && !lang_rust)
-
 package golang
 
 import (

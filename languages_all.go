@@ -1,8 +1,8 @@
-//go:build lang_all
+//go:build !lang_go && !lang_python && !lang_typescript && !lang_rust
 
 package main
 
-// Import all language packages to register them
+// Import all language packages by default (when no lang_* tags specified)
 import (
 	_ "github.com/roveo/topo-mcp/languages/golang"
 	_ "github.com/roveo/topo-mcp/languages/python"

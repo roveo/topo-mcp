@@ -63,14 +63,13 @@ Choose a build profile that matches your stack:
 git clone https://github.com/roveo/topo-mcp.git
 cd topo-mcp
 
-# Build default (Go only - smallest binary)
+# Build default (all languages)
 make build
 
-# Build with all languages
-make build-all
-
-# Build a specific profile
-make build-fullstack
+# Build with specific language(s) only
+make build-go
+go build -tags lang_go .
+go build -tags "lang_go,lang_python" .
 
 # Build all profiles
 make build-profiles
@@ -79,13 +78,11 @@ make build-profiles
 ### Install with Go
 
 ```bash
-# Go only (default)
+# All languages (default)
 go install github.com/roveo/topo-mcp@latest
 
-# All languages
-go install -tags lang_all github.com/roveo/topo-mcp@latest
-
-# Custom combination
+# Specific language(s) only
+go install -tags lang_go github.com/roveo/topo-mcp@latest
 go install -tags "lang_go,lang_python" github.com/roveo/topo-mcp@latest
 ```
 
