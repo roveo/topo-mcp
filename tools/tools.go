@@ -22,10 +22,11 @@ type Config struct {
 
 // FileIndex represents the index of a single source file
 type FileIndex struct {
-	Path     string             `json:"path"`              // Relative path from index root
-	Language string             `json:"language"`          // Language identifier (e.g., "go", "python")
-	Imports  []string           `json:"imports,omitempty"` // Import paths/modules
-	Symbols  []languages.Symbol `json:"-"`                 // Symbols in the file
+	Path      string             `json:"path"`              // Relative path from index root
+	Language  string             `json:"language"`          // Language identifier (e.g., "go", "python")
+	Imports   []string           `json:"imports,omitempty"` // Import paths/modules
+	Symbols   []languages.Symbol `json:"-"`                 // Symbols in the file
+	Truncated bool               `json:"-"`                 // True if file was truncated due to line limit
 }
 
 // IndexDirectory walks the directory and indexes all supported source files

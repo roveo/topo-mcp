@@ -13,15 +13,21 @@ import (
 
 // CodemapInput is the input schema for the codemap tool
 type CodemapInput struct {
-	Path   string `json:"path,omitempty" jsonschema_description:"Directory path to index. Defaults to current working directory if not specified."`
-	Filter string `json:"filter,omitempty" jsonschema_description:"Optional path filter to show only a specific package (directory) or file. When specified, only files matching this prefix will have their symbols shown. Use this to get a compact map of just the relevant part of the codebase. Overrides any default skip patterns for matching files."`
+	Path   string `json:"path,omitempty" jsonschema_description:"Directory to index. Defaults to current working directory."`
+	Filter string `json:"filter,omitempty" jsonschema_description:"Filter by file path prefix (e.g., 'handlers' or 'src/utils'). Only files matching this prefix will be shown."`
 }
 
 // CodemapTool creates the codemap MCP tool
 func CodemapTool() *mcp.Tool {
 	return &mcp.Tool{
-		Name:        "index",
-		Description: "Index a codebase and return a compact listing of all symbols (functions, types, classes, etc.) with their line ranges. Supports Go, Python, TypeScript/JavaScript, and Rust (depending on build configuration).",
+		Name: "index",
+		Description: `List all symbols (functions, types, classes, etc.) in a codebase with file paths and line numbers.
+
+USE THIS FIRST when exploring unfamiliar code or finding where something is defined. Much faster than grep for locating definitions.
+
+Typical workflow: index → find symbol → read_definition to get source code.
+
+Use 'filter' param to focus on a specific directory (e.g., filter='handlers').`,
 	}
 }
 
@@ -85,17 +91,9 @@ func FormatCodemap(files []FileIndex, opts FormatOptions) string {
 
 	// Build tree and prune if necessary
 	tree := buildDirTree(files, opts)
-	prunedFiles, prunedDirs := pruneToLimit(tree, limit)
+	prunedFiles := pruneToLimit(tree, limit)
 
 	var sb strings.Builder
-
-	// Show pruned directories notice
-	if len(prunedDirs) > 0 {
-		sb.WriteString("# Note: Output pruned to fit line limit\n")
-		sb.WriteString("# Pruned directories: ")
-		sb.WriteString(strings.Join(prunedDirs, ", "))
-		sb.WriteString("\n\n")
-	}
 
 	// Handle skipped files (not pruned, but skipped by skip patterns)
 	for _, file := range files {
@@ -108,13 +106,19 @@ func FormatCodemap(files []FileIndex, opts FormatOptions) string {
 		}
 	}
 
-	// Format pruned files
+	// Format files
 	for _, file := range prunedFiles {
-		if len(file.Symbols) == 0 {
+		if len(file.Symbols) == 0 && !file.Truncated {
 			continue
 		}
 
 		sb.WriteString(fmt.Sprintf("## %s\n", file.Path))
+
+		// Handle truncated files
+		if file.Truncated {
+			sb.WriteString("  (truncated - use filter parameter to see symbols)\n\n")
+			continue
+		}
 
 		for _, sym := range file.Symbols {
 			loc := sym.Location()
@@ -189,11 +193,12 @@ func fileLineCount(file FileIndex) int {
 
 // dirNode represents a directory in the tree structure for pruning
 type dirNode struct {
-	name     string
-	path     string              // Full relative path
-	files    []FileIndex         // Files directly in this directory
-	children map[string]*dirNode // Subdirectories
-	lines    int                 // Total lines in this subtree
+	name      string
+	path      string              // Full relative path
+	files     []FileIndex         // Files directly in this directory
+	children  map[string]*dirNode // Subdirectories
+	lines     int                 // Total lines in this subtree
+	truncated bool                // True if this directory was truncated
 }
 
 // buildDirTree builds a tree structure from flat file list
@@ -277,74 +282,74 @@ func calculateLines(node *dirNode) int {
 	return total
 }
 
+// truncatedFileLineCount is the line count for a truncated file (header + message + blank)
+const truncatedFileLineCount = 3
+
 // pruneToLimit prunes the tree to fit within the line limit
-// Returns the pruned file list and a list of pruned directories
-func pruneToLimit(root *dirNode, limit int) ([]FileIndex, []string) {
+// Returns the file list with truncated files marked
+func pruneToLimit(root *dirNode, limit int) []FileIndex {
 	if limit <= 0 || root.lines <= limit {
 		// No pruning needed, collect all files
-		return collectFiles(root), nil
+		return collectFiles(root)
 	}
 
-	var prunedDirs []string
 	currentLines := root.lines
 
 	// Keep pruning until we're under the limit
 	for currentLines > limit {
-		// Find the largest leaf node (directory with no subdirectories, or file)
-		leaf, parent := findLargestLeaf(root)
+		// Find the largest leaf node (directory with no subdirectories)
+		leaf := findLargestLeaf(root)
 		if leaf == nil {
 			break // No more nodes to prune
 		}
 
-		// Remove the leaf
-		if parent != nil {
-			delete(parent.children, leaf.name)
-		}
+		// Mark the directory as truncated (instead of removing it)
+		leaf.truncated = true
 
-		// Track pruned directory
-		if leaf.path != "" {
-			prunedDirs = append(prunedDirs, leaf.path)
-		}
+		// Calculate line savings: original lines - truncated placeholder lines
+		// Each file becomes just header + message + blank (3 lines)
+		originalLines := leaf.lines
+		newLines := len(leaf.files) * truncatedFileLineCount
+		savings := originalLines - newLines
 
 		// Update line counts
-		currentLines -= leaf.lines
+		currentLines -= savings
+		leaf.lines = newLines
 		recalculateParentLines(root)
 	}
 
-	// If still over limit, prune files from directories
+	// If still over limit, prune individual files
 	if currentLines > limit {
 		pruneFilesToLimit(root, &currentLines, limit)
 	}
 
-	return collectFiles(root), prunedDirs
+	return collectFiles(root)
 }
 
-// findLargestLeaf finds the leaf node (no children) with the most lines
-func findLargestLeaf(root *dirNode) (*dirNode, *dirNode) {
+// findLargestLeaf finds the non-truncated leaf node (no children) with the most lines
+func findLargestLeaf(root *dirNode) *dirNode {
 	var largest *dirNode
-	var largestParent *dirNode
 	maxLines := 0
 
-	var findLeaf func(node, parent *dirNode)
-	findLeaf = func(node, parent *dirNode) {
-		// If this node has no children, it's a leaf
-		if len(node.children) == 0 && node != root {
+	var findLeaf func(node *dirNode)
+	findLeaf = func(node *dirNode) {
+		// If this node has no children and is not already truncated, it's a candidate
+		if len(node.children) == 0 && node != root && !node.truncated {
 			if node.lines > maxLines {
 				maxLines = node.lines
 				largest = node
-				largestParent = parent
 			}
 			return
 		}
 
 		// Recurse into children
 		for _, child := range node.children {
-			findLeaf(child, node)
+			findLeaf(child)
 		}
 	}
 
-	findLeaf(root, nil)
-	return largest, largestParent
+	findLeaf(root)
+	return largest
 }
 
 // recalculateParentLines recalculates all line counts after pruning
@@ -410,12 +415,19 @@ func pruneFilesToLimit(root *dirNode, currentLines *int, limit int) {
 }
 
 // collectFiles collects all files from the tree in sorted order
+// Files from truncated directories are marked as Truncated
 func collectFiles(root *dirNode) []FileIndex {
 	var files []FileIndex
 
 	var collect func(node *dirNode)
 	collect = func(node *dirNode) {
-		files = append(files, node.files...)
+		// If directory is truncated, mark all its files as truncated
+		for _, file := range node.files {
+			if node.truncated {
+				file.Truncated = true
+			}
+			files = append(files, file)
+		}
 		// Sort children for deterministic order
 		var childNames []string
 		for name := range node.children {

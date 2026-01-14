@@ -131,13 +131,17 @@ func TestPruneToLimit_NoLimit(t *testing.T) {
 	files := makeTestFiles(5, 10) // 5 files, 10 symbols each
 
 	tree := buildDirTree(files, FormatOptions{})
-	prunedFiles, prunedDirs := pruneToLimit(tree, 0)
+	prunedFiles := pruneToLimit(tree, 0)
 
 	if len(prunedFiles) != 5 {
 		t.Errorf("expected 5 files, got %d", len(prunedFiles))
 	}
-	if len(prunedDirs) != 0 {
-		t.Errorf("expected no pruned dirs, got %v", prunedDirs)
+
+	// No files should be truncated
+	for _, f := range prunedFiles {
+		if f.Truncated {
+			t.Errorf("file %s should not be truncated", f.Path)
+		}
 	}
 }
 
@@ -145,13 +149,17 @@ func TestPruneToLimit_UnderLimit(t *testing.T) {
 	files := makeTestFiles(2, 5) // 2 files, 5 symbols each = 14 lines
 
 	tree := buildDirTree(files, FormatOptions{})
-	prunedFiles, prunedDirs := pruneToLimit(tree, 100)
+	prunedFiles := pruneToLimit(tree, 100)
 
 	if len(prunedFiles) != 2 {
 		t.Errorf("expected 2 files, got %d", len(prunedFiles))
 	}
-	if len(prunedDirs) != 0 {
-		t.Errorf("expected no pruned dirs, got %v", prunedDirs)
+
+	// No files should be truncated since under limit
+	for _, f := range prunedFiles {
+		if f.Truncated {
+			t.Errorf("file %s should not be truncated", f.Path)
+		}
 	}
 }
 
@@ -165,18 +173,28 @@ func TestPruneToLimit_PrunesLargestFirst(t *testing.T) {
 
 	// small = 4 lines, large = 22 lines, medium = 12 lines
 	// Total = 38 lines
-	// With limit 20, should prune "large" first (22 lines)
+	// With limit 20, should prune "large" first (22 lines -> 3 lines truncated)
+	// After pruning large: 4 + 3 + 12 = 19 lines
 	tree := buildDirTree(files, FormatOptions{})
-	prunedFiles, prunedDirs := pruneToLimit(tree, 20)
+	prunedFiles := pruneToLimit(tree, 20)
 
-	// Should have small and medium, large should be pruned
-	if len(prunedFiles) != 2 {
-		t.Errorf("expected 2 files, got %d", len(prunedFiles))
+	// Should have all 3 files, but large should be truncated
+	if len(prunedFiles) != 3 {
+		t.Errorf("expected 3 files, got %d", len(prunedFiles))
 	}
 
-	// large directory should be pruned
-	if len(prunedDirs) != 1 || prunedDirs[0] != "large" {
-		t.Errorf("expected [large] to be pruned, got %v", prunedDirs)
+	// Check truncation status
+	for _, f := range prunedFiles {
+		switch f.Path {
+		case "large/b.go":
+			if !f.Truncated {
+				t.Errorf("large/b.go should be truncated")
+			}
+		default:
+			if f.Truncated {
+				t.Errorf("%s should not be truncated", f.Path)
+			}
+		}
 	}
 }
 
@@ -213,14 +231,21 @@ func TestFormatCodemap_WithLineLimit(t *testing.T) {
 
 	// Output should be under limit (approximately)
 	lines := strings.Split(output, "\n")
-	// Allow some overhead for the pruning notice header
+	// Allow some overhead
 	if len(lines) > 60 {
 		t.Errorf("output should be around 50 lines, got %d", len(lines))
 	}
 
-	// Should have pruning notice
-	if !strings.Contains(output, "pruned") {
-		t.Errorf("output should contain pruning notice, got:\n%s", output)
+	// Should have truncated files shown in-place
+	if !strings.Contains(output, "truncated") {
+		t.Errorf("output should contain truncated message, got:\n%s", output)
+	}
+
+	// All files should still appear in output (headers present)
+	for _, f := range files {
+		if !strings.Contains(output, f.Path) {
+			t.Errorf("output should contain file %s", f.Path)
+		}
 	}
 }
 
@@ -232,9 +257,9 @@ func TestFormatCodemap_NoLimitUsesDefault(t *testing.T) {
 		LineLimit: 0, // Should use DefaultLineLimit
 	})
 
-	// Should NOT have pruning notice since 60 < 1000
-	if strings.Contains(output, "pruned") {
-		t.Errorf("output should not contain pruning notice for small outputs")
+	// Should NOT have truncated files since 60 < 1000
+	if strings.Contains(output, "truncated") {
+		t.Errorf("output should not contain truncated message for small outputs")
 	}
 }
 
