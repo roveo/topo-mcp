@@ -287,3 +287,13 @@ mcp.AddTool(s, tools.SomeToolTool(), tools.SomeToolHandler(serverConfig))
 | `read_definition` | Get the source code of a symbol |
 | `write_definition` | Replace a symbol's source code |
 | `find_references` | Find all references to a symbol |
+
+## Code Navigation
+
+When exploring this codebase, prefer the topo MCP tools over built-in Read/Glob/Grep:
+
+1. **Start with `topo_index`** to get a map of all symbols with file paths and line numbers
+2. **Use `topo_read_definition`** to read specific functions/types (more efficient than reading entire files)
+3. **Use `topo_find_references`** before refactoring to see impact
+
+The `@explore` agent is optimized for code navigation using these tools.

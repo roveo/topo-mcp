@@ -131,6 +131,17 @@ Find all references to a symbol across the codebase.
 | `path` | Directory to search (default: cwd) |
 | `symbol` | Name of the symbol to find |
 
+### Available Prompts
+
+#### `explore`
+A prompt template that provides instructions for navigating code using topo tools. When invoked, it injects a system message teaching the LLM how to effectively use `index`, `read_definition`, and `find_references` in the right order.
+
+| Parameter | Description |
+|-----------|-------------|
+| `query` | (Optional) What you want to find or understand in the codebase |
+
+Clients that support MCP prompts can invoke this to get optimized code navigation behavior.
+
 ### CLI Mode
 
 ```bash
@@ -161,7 +172,7 @@ Add to your `opencode.json`:
   "mcp": {
     "topo": {
       "type": "local",
-      "command": ["topo", "mcp"]
+      "command": ["topo-mcp", "mcp"]
     }
   }
 }
@@ -174,10 +185,39 @@ With skip patterns:
   "mcp": {
     "topo": {
       "type": "local",
-      "command": ["topo", "mcp", "--skip", "generated", "--skip", "testdata"]
+      "command": ["topo-mcp", "mcp", "--skip", "generated", "--skip", "testdata"]
     }
   }
 }
+```
+
+**Recommended: Add the explore agent** for optimized code navigation. Create `.opencode/agent/explore.md`:
+
+```markdown
+---
+description: Fast codebase exploration using topo tools. Use for finding definitions, understanding structure, and navigating code.
+mode: subagent
+tools:
+  write: false
+  edit: false
+  bash: false
+---
+
+You are an expert code navigator. ALWAYS use topo MCP tools:
+
+1. **topo_index** - USE FIRST. Lists all symbols with file paths and line numbers.
+2. **topo_read_definition** - Read a symbol's source code (more efficient than reading entire files).
+3. **topo_find_references** - Find all usages of a symbol (syntax-aware).
+
+Workflow: topo_index → find symbol → topo_read_definition
+
+Only fall back to Read/Glob/Grep for non-code files or unsupported languages.
+```
+
+Then invoke with `@explore`:
+```
+@explore Where is the authentication logic?
+@explore How is UserService used?
 ```
 
 #### Claude Code
