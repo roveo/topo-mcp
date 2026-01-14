@@ -19,8 +19,12 @@ type ReadDefinitionInput struct {
 // ReadDefinitionTool creates the read_definition MCP tool
 func ReadDefinitionTool() *mcp.Tool {
 	return &mcp.Tool{
-		Name:        "read_definition",
-		Description: "Get the source code of a symbol (function, type, class, etc.) by name and file path. Similar to LSP's 'Go to Definition'. Returns the complete source code of the symbol including its signature and body.",
+		Name: "read_definition",
+		Description: `Get the complete source code of a symbol (function, type, class, etc.) by file path and name.
+
+Get file path and symbol name from 'index' output, or use directly if you already know them.
+
+Returns the full implementation with line numbers. More efficient than reading entire files when you only need one symbol.`,
 	}
 }
 

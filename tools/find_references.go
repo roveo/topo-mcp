@@ -22,8 +22,12 @@ type FindReferencesInput struct {
 // FindReferencesTool creates the find_references MCP tool
 func FindReferencesTool() *mcp.Tool {
 	return &mcp.Tool{
-		Name:        "find_references",
-		Description: "Find all references to a symbol across the codebase. Returns file locations where the symbol name appears as an identifier (not in strings or comments).",
+		Name: "find_references",
+		Description: `Find all usages of a symbol across the codebase.
+
+Syntax-aware: only finds actual code references, not strings or comments. Better than grep for code navigation.
+
+Use before refactoring to see what would be affected, or to understand how a function/type is used.`,
 	}
 }
 

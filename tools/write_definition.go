@@ -20,8 +20,12 @@ type WriteDefinitionInput struct {
 // WriteDefinitionTool creates the write_definition MCP tool
 func WriteDefinitionTool() *mcp.Tool {
 	return &mcp.Tool{
-		Name:        "write_definition",
-		Description: "Replace the source code of a symbol (function, type, class, etc.) by name and file path. The inverse of read_definition. Replaces the entire symbol definition with the provided code.",
+		Name: "write_definition",
+		Description: `Replace a symbol's source code entirely. Inverse of read_definition.
+
+Provide the complete new code including signature. Surrounding code is preserved.
+
+Typical workflow: read_definition → modify → write_definition.`,
 	}
 }
 
