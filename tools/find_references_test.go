@@ -24,7 +24,7 @@ func main() {
 	Hello("Again")
 }
 `
-	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write main.go: %v", err)
 	}
@@ -41,7 +41,7 @@ func Goodbye(name string) string {
 	return Hello(name) + " Goodbye!"
 }
 `
-	err = os.WriteFile(filepath.Join(tmpDir, "hello.go"), []byte(helloGo), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "hello.go"), []byte(helloGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write hello.go: %v", err)
 	}
@@ -85,7 +85,7 @@ func main() {
 	println("hello")
 }
 `
-	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
@@ -113,7 +113,7 @@ func main() {
 
 func Hello() {}
 `
-	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
@@ -149,7 +149,7 @@ func (p *Person) Greet() string {
 	return "Hi, " + p.Name
 }
 `
-	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write file: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestFindReferences_Subdirectories(t *testing.T) {
 
 	// Create subdirectory
 	subDir := filepath.Join(tmpDir, "pkg")
-	err := os.MkdirAll(subDir, 0755)
+	err := os.MkdirAll(subDir, 0o755)
 	if err != nil {
 		t.Fatalf("failed to create subdir: %v", err)
 	}
@@ -189,7 +189,7 @@ func main() {
 	Shared()
 }
 `
-	err = os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0644)
+	err = os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte(mainGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write main.go: %v", err)
 	}
@@ -201,7 +201,7 @@ func Shared() {
 	println("shared")
 }
 `
-	err = os.WriteFile(filepath.Join(subDir, "shared.go"), []byte(sharedGo), 0644)
+	err = os.WriteFile(filepath.Join(subDir, "shared.go"), []byte(sharedGo), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write shared.go: %v", err)
 	}

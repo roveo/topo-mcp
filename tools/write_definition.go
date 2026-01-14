@@ -75,7 +75,7 @@ func ReplaceSymbol(filePath string, symbolName string, newCode string) error {
 	}
 
 	// Find the symbol
-	var found = -1
+	found := -1
 	for i, sym := range symbols {
 		if sym.Name() == symbolName {
 			found = i
@@ -123,7 +123,7 @@ func ReplaceSymbol(filePath string, symbolName string, newCode string) error {
 
 	// Write back
 	newContent := strings.Join(newLines, "\n")
-	err = os.WriteFile(filePath, []byte(newContent), 0644)
+	err = os.WriteFile(filePath, []byte(newContent), 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}

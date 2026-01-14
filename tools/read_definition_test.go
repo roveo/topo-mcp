@@ -30,7 +30,7 @@ func (p Person) Greet() string {
 	return "Hi, I'm " + p.Name
 }
 `
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
@@ -96,7 +96,7 @@ func (p Person) Greet() string {
 func TestFindSymbol_UnsupportedFile(t *testing.T) {
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "test.txt")
-	err := os.WriteFile(testFile, []byte("hello"), 0644)
+	err := os.WriteFile(testFile, []byte("hello"), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
@@ -127,7 +127,7 @@ func Foo() {}
 func Bar() {}
 var X = 1
 `
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}

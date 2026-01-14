@@ -8,8 +8,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var skipPatterns []string
-var lineLimit int
+var (
+	skipPatterns []string
+	lineLimit    int
+)
 
 var rootCmd = &cobra.Command{
 	Use:   "topo",

@@ -24,7 +24,7 @@ func Goodbye(name string) string {
 	return "Goodbye, " + name
 }
 `
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
@@ -78,7 +78,7 @@ type Person struct {
 
 func Hello() {}
 `
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestReplaceSymbol_NotFound(t *testing.T) {
 
 func Hello() {}
 `
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
@@ -155,7 +155,7 @@ func Third() {
 	fmt.Println("third")
 }
 `
-	err := os.WriteFile(testFile, []byte(content), 0644)
+	err := os.WriteFile(testFile, []byte(content), 0o644)
 	if err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}

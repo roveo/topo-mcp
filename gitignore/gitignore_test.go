@@ -155,14 +155,14 @@ dist/
 # Pattern with path
 src/generated/
 `
-	err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create .gitignore: %v", err)
 	}
 
 	// Create subdirectory with its own .gitignore
 	subDir := filepath.Join(tmpDir, "pkg")
-	err = os.Mkdir(subDir, 0755)
+	err = os.Mkdir(subDir, 0o755)
 	if err != nil {
 		t.Fatalf("failed to create subdir: %v", err)
 	}
@@ -171,7 +171,7 @@ src/generated/
 # Package-specific ignores
 *.tmp
 `
-	err = os.WriteFile(filepath.Join(subDir, ".gitignore"), []byte(subGitignore), 0644)
+	err = os.WriteFile(filepath.Join(subDir, ".gitignore"), []byte(subGitignore), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create sub .gitignore: %v", err)
 	}
@@ -252,7 +252,7 @@ func TestMatcher_DirectoryOnlyPattern(t *testing.T) {
 # Only match directories named 'cache'
 cache/
 `
-	err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create .gitignore: %v", err)
 	}
